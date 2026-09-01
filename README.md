@@ -50,6 +50,7 @@ The project may borrow ideas from pocket music players, but it will develop its 
 - Git
 - Python 3.14
 - Node.js when running the JavaScript tests; it is not required to run the application
+- pywebview and its platform dependencies when running the desktop application
 - A Spotify Premium account and Spotify developer application for real OAuth and playback; neither is required for the offline tests or welcome screen
 
 ### Create the environment
@@ -60,6 +61,12 @@ From the repository root:
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e ".[dev]"
+```
+
+Include the optional desktop runtime when working on the native-window build:
+
+```bash
+python -m pip install -e ".[dev,desktop]"
 ```
 
 The editable installation uses `pyproject.toml` as the source of truth for runtime and development dependencies. The `.venv/` directory and generated packaging metadata are local artifacts and must not be committed.
@@ -117,6 +124,23 @@ python -m flask --app app run
 Open [http://127.0.0.1:5050](http://127.0.0.1:5050). Port 5050 avoids the AirPlay Receiver service that commonly occupies port 5000 on macOS. The welcome screen works without Spotify credentials and explains when local configuration is incomplete.
 
 The MVP uses an in-memory server-side token store. Restarting Flask intentionally signs the user out.
+
+### Run the desktop application
+
+Install the desktop extra, stop any separate Flask process using port 5050, then run:
+
+```bash
+spotify-pocket-player
+```
+
+The equivalent module command is:
+
+```bash
+python -m app.desktop
+```
+
+The launcher starts Flask on the loopback interface, opens the existing UI in a
+content-fitting native window, and stops the server when the window closes.
 
 ## Tests
 

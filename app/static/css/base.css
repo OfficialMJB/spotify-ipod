@@ -421,3 +421,26 @@ html[data-mode="compact"] .nav-button[data-action="open-settings"] { display: no
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* The packaged desktop window follows the content instead of filling a viewport. */
+html[data-runtime="desktop"] body { min-height: 0; }
+
+html[data-runtime="desktop"] .app-shell {
+  width: max-content;
+  min-height: 0;
+  padding: 0.5rem;
+  place-content: start;
+  grid-template-columns: 35rem;
+}
+
+html[data-runtime="desktop"][data-mode="compact"] .app-shell:not(:has(.side-panel:not([hidden]))) {
+  grid-template-columns: 28rem;
+}
+
+html[data-runtime="desktop"] .app-shell:has(.side-panel:not([hidden])) {
+  grid-template-columns: 35rem 27rem;
+  align-items: start;
+}
+
+html[data-runtime="desktop"] .side-panel { max-height: 44rem; }
+html[data-runtime="desktop"] .library-list { max-height: 32rem; }

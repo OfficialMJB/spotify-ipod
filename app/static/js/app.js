@@ -1,4 +1,5 @@
 import { api, ApiError, setCsrfToken } from "./api.js";
+import { setupDesktopWindowSizing } from "./desktop-window.js";
 import { createPlayer, loadSpotifySdk, sdkErrorMessage } from "./player.js";
 import {
   applyPreferences,
@@ -21,6 +22,7 @@ const callbackError = readAuthenticationError();
 
 store.subscribe(render);
 render(store.getState());
+setupDesktopWindowSizing();
 
 document.addEventListener("click", handleClick);
 document.addEventListener("change", handlePreferenceChange);

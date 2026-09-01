@@ -16,6 +16,12 @@ dependencies = [
 dev = [
     "pytest>=8,<10",
 ]
+desktop = [
+    "pywebview>=6.2,<7",
+]
+
+[project.scripts]
+spotify-pocket-player = "app.desktop:main"
 
 [tool.setuptools.packages.find]
 include = ["app*"]
