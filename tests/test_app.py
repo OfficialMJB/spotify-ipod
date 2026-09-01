@@ -18,6 +18,7 @@ def test_oauth_scopes_cover_library_sdk_and_playback(app):
         "streaming",
         "playlist-read-private",
         "playlist-read-collaborative",
+        "user-library-read",
         "user-read-email",
         "user-read-private",
         "user-modify-playback-state",

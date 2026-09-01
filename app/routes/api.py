@@ -56,6 +56,29 @@ def playlist_tracks(playlist_id: str):
     )
 
 
+@api_blueprint.get("/library/tracks")
+def saved_tracks():
+    offset, limit = parse_pagination(default_limit=50, maximum_limit=50)
+    return _service().list_saved_tracks(
+        session.get("session_id"), offset=offset, limit=limit
+    )
+
+
+@api_blueprint.get("/search/tracks")
+def search_tracks():
+    offset, limit = parse_pagination(
+        default_limit=10,
+        maximum_limit=10,
+        maximum_offset=1000,
+    )
+    return _service().search_tracks(
+        session.get("session_id"),
+        query=request.args.get("q"),
+        offset=offset,
+        limit=limit,
+    )
+
+
 @api_blueprint.put("/playback/start")
 def start_playback():
     validate_csrf()
@@ -71,7 +94,12 @@ def start_playback():
     return "", 204
 
 
-def parse_pagination(*, default_limit: int, maximum_limit: int) -> tuple[int, int]:
+def parse_pagination(
+    *,
+    default_limit: int,
+    maximum_limit: int,
+    maximum_offset: int | None = None,
+) -> tuple[int, int]:
     offset_text = request.args.get("offset", "0")
     limit_text = request.args.get("limit", str(default_limit))
     try:
@@ -81,6 +109,8 @@ def parse_pagination(*, default_limit: int, maximum_limit: int) -> tuple[int, in
         raise invalid_request("offset and limit must be integers.") from error
     if offset < 0:
         raise invalid_request("offset must be zero or greater.")
+    if maximum_offset is not None and offset > maximum_offset:
+        raise invalid_request(f"offset must be {maximum_offset} or less.")
     if limit < 1 or limit > maximum_limit:
         raise invalid_request(f"limit must be between 1 and {maximum_limit}.")
     return offset, limit

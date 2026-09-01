@@ -40,7 +40,7 @@ class FakeOAuthClient:
 
 class FakeSpotifyApiClient:
     def __init__(self) -> None:
-        self.playback_calls: list[dict[str, str]] = []
+        self.playback_calls: list[dict[str, str | None]] = []
         self.user_payload: dict[str, Any] = {
             "id": "user123",
             "display_name": "Test Listener",
@@ -77,42 +77,55 @@ class FakeSpotifyApiClient:
             "collaborative": False,
             "owner": {"id": "user123"},
         }
-        self.items_payload: dict[str, Any] = {
-            "items": [
+        track_payload: dict[str, Any] = {
+            "id": "track123",
+            "uri": "spotify:track:track123",
+            "type": "track",
+            "name": "Track name",
+            "duration_ms": 180000,
+            "is_local": False,
+            "is_playable": True,
+            "artists": [
                 {
-                    "item": {
-                        "id": "track123",
-                        "uri": "spotify:track:track123",
-                        "type": "track",
-                        "name": "Track name",
-                        "duration_ms": 180000,
-                        "is_local": False,
-                        "is_playable": True,
-                        "artists": [
-                            {
-                                "name": "Artist name",
-                                "external_urls": {
-                                    "spotify": "https://open.spotify.com/artist/artist123"
-                                },
-                            }
-                        ],
-                        "album": {
-                            "name": "Album name",
-                            "images": [{"url": "https://images.test/album.jpg"}],
-                            "external_urls": {
-                                "spotify": "https://open.spotify.com/album/album123"
-                            },
-                        },
-                        "external_urls": {
-                            "spotify": "https://open.spotify.com/track/track123"
-                        },
-                    }
+                    "name": "Artist name",
+                    "external_urls": {
+                        "spotify": "https://open.spotify.com/artist/artist123"
+                    },
                 }
             ],
+            "album": {
+                "name": "Album name",
+                "images": [{"url": "https://images.test/album.jpg"}],
+                "external_urls": {
+                    "spotify": "https://open.spotify.com/album/album123"
+                },
+            },
+            "external_urls": {
+                "spotify": "https://open.spotify.com/track/track123"
+            },
+        }
+        self.items_payload: dict[str, Any] = {
+            "items": [{"item": track_payload}],
             "offset": 0,
             "limit": 50,
             "total": 1,
             "next": None,
+        }
+        self.saved_tracks_payload: dict[str, Any] = {
+            "items": [{"added_at": "2026-09-01T00:00:00Z", "track": track_payload}],
+            "offset": 0,
+            "limit": 50,
+            "total": 1,
+            "next": None,
+        }
+        self.search_payload: dict[str, Any] = {
+            "tracks": {
+                "items": [track_payload],
+                "offset": 0,
+                "limit": 10,
+                "total": 1,
+                "next": None,
+            }
         }
 
     def current_user(self, access_token: str) -> dict[str, Any]:
@@ -131,12 +144,27 @@ class FakeSpotifyApiClient:
     ) -> dict[str, Any]:
         return self.items_payload
 
+    def saved_tracks(
+        self, access_token: str, *, offset: int, limit: int
+    ) -> dict[str, Any]:
+        return self.saved_tracks_payload
+
+    def search_tracks(
+        self,
+        access_token: str,
+        *,
+        query: str,
+        offset: int,
+        limit: int,
+    ) -> dict[str, Any]:
+        return self.search_payload
+
     def start_playback(
         self,
         access_token: str,
         *,
         device_id: str,
-        context_uri: str,
+        context_uri: str | None,
         track_uri: str,
     ) -> None:
         self.playback_calls.append(

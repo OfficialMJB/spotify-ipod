@@ -12,6 +12,7 @@ from .tokens import MemoryTokenStore, TokenRecord
 
 SPOTIFY_ID_PATTERN = re.compile(r"^[A-Za-z0-9]{1,128}$")
 DEVICE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
+SEARCH_QUERY_MAX_LENGTH = 100
 
 
 class SpotifyService:
@@ -103,6 +104,52 @@ class SpotifyService:
 
         return self._with_record(session_id, fetch)
 
+    def list_saved_tracks(
+        self, session_id: str | None, *, offset: int, limit: int
+    ) -> dict[str, Any]:
+        def fetch(record: TokenRecord) -> dict[str, Any]:
+            payload = self.api_client.saved_tracks(
+                record.access_token, offset=offset, limit=limit
+            )
+            return {
+                "items": normalize_track_items(payload.get("items")),
+                "pagination": normalize_pagination(
+                    payload, offset=offset, limit=limit
+                ),
+            }
+
+        return self._with_record(session_id, fetch)
+
+    def search_tracks(
+        self,
+        session_id: str | None,
+        *,
+        query: object,
+        offset: int,
+        limit: int,
+    ) -> dict[str, Any]:
+        valid_query = validate_search_query(query)
+
+        def fetch(record: TokenRecord) -> dict[str, Any]:
+            payload = self.api_client.search_tracks(
+                record.access_token,
+                query=valid_query,
+                offset=offset,
+                limit=limit,
+            )
+            tracks = payload.get("tracks")
+            if not isinstance(tracks, dict):
+                raise malformed_response()
+            return {
+                "query": valid_query,
+                "items": normalize_track_items(tracks.get("items")),
+                "pagination": normalize_pagination(
+                    tracks, offset=offset, limit=limit
+                ),
+            }
+
+        return self._with_record(session_id, fetch)
+
     def start_playback(
         self,
         session_id: str | None,
@@ -112,7 +159,11 @@ class SpotifyService:
         track_uri: object,
     ) -> None:
         valid_device_id = validate_device_id(device_id)
-        valid_context_uri = validate_uri(context_uri, "playlist", "context_uri")
+        valid_context_uri = (
+            None
+            if context_uri is None
+            else validate_uri(context_uri, "playlist", "context_uri")
+        )
         valid_track_uri = validate_uri(track_uri, "track", "track_uri")
 
         def start(record: TokenRecord) -> None:
@@ -191,6 +242,10 @@ def normalize_track_items(value: object) -> list[dict[str, Any]]:
         if not isinstance(entry, dict):
             continue
         track = entry.get("item")
+        if not isinstance(track, dict):
+            track = entry.get("track")
+        if not isinstance(track, dict) and entry.get("type") == "track":
+            track = entry
         if not isinstance(track, dict) or track.get("type", "track") != "track":
             continue
         if track.get("is_local") is True:
@@ -266,6 +321,19 @@ def validate_device_id(value: object) -> str:
     if not isinstance(value, str) or not DEVICE_ID_PATTERN.fullmatch(value):
         raise invalid_request("device_id is invalid.")
     return value
+
+
+def validate_search_query(value: object) -> str:
+    if not isinstance(value, str):
+        raise invalid_request("q is required.")
+    query = " ".join(value.split())
+    if not query:
+        raise invalid_request("q must not be blank.")
+    if len(query) > SEARCH_QUERY_MAX_LENGTH:
+        raise invalid_request(
+            f"q must be {SEARCH_QUERY_MAX_LENGTH} characters or fewer."
+        )
+    return query
 
 
 def validate_uri(value: object, kind: str, field: str) -> str:

@@ -295,6 +295,60 @@ progress::-moz-progress-bar { background: var(--accent); }
 .panel-header > .icon-button:last-child { margin-left: auto; }
 .panel-message { padding: 1.25rem 0; line-height: 1.5; }
 
+.library-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  margin-top: 1rem;
+  padding: 0.3rem;
+  border-radius: 0.75rem;
+  background: var(--control);
+}
+
+.library-tabs button {
+  min-height: 2.35rem;
+  padding: 0.45rem;
+  border: 0;
+  border-radius: 0.55rem;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.library-tabs button[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.track-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.track-search input {
+  min-width: 0;
+  min-height: 2.6rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: var(--control);
+  color: var(--text);
+}
+
+.track-search button {
+  min-height: 2.6rem;
+  padding: 0.65rem 0.9rem;
+  border: 0;
+  border-radius: 0.7rem;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 750;
+}
+
 .library-list { max-height: min(32rem, 60vh); margin: 0; padding: 0.5rem 0; overflow-y: auto; list-style: none; }
 .library-item {
   display: grid;

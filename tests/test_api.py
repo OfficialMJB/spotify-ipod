@@ -76,6 +76,50 @@ def test_ineligible_playlist_is_rejected(authenticated_client, fake_spotify):
     assert response.get_json()["error"]["code"] == "playlist_unavailable"
 
 
+def test_liked_songs_return_normalized_tracks_and_pagination(authenticated_client):
+    response = authenticated_client.get("/api/library/tracks?offset=0&limit=50")
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["items"][0]["id"] == "track123"
+    assert payload["items"][0]["name"] == "Track name"
+    assert payload["pagination"] == {
+        "offset": 0,
+        "limit": 50,
+        "total": 1,
+        "next_offset": None,
+    }
+
+
+def test_track_search_normalizes_query_and_limits_results(
+    authenticated_client, fake_spotify
+):
+    response = authenticated_client.get(
+        "/api/search/tracks?q=%20Miles%20%20Davis%20&limit=10"
+    )
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["query"] == "Miles Davis"
+    assert payload["items"][0]["id"] == "track123"
+
+
+def test_track_search_rejects_blank_query_and_excessive_pagination(
+    authenticated_client
+):
+    blank = authenticated_client.get("/api/search/tracks?q=%20%20")
+    excessive_limit = authenticated_client.get(
+        "/api/search/tracks?q=test&limit=11"
+    )
+    excessive_offset = authenticated_client.get(
+        "/api/search/tracks?q=test&offset=1001"
+    )
+
+    assert blank.status_code == 400
+    assert excessive_limit.status_code == 400
+    assert excessive_offset.status_code == 400
+
+
 def test_pagination_validation_is_strict(authenticated_client):
     response = authenticated_client.get("/api/playlists?offset=-1&limit=500")
 
@@ -115,6 +159,30 @@ def test_playback_start_validates_and_forwards_only_expected_fields(
             "access_token": "server-only-access",
             "device_id": "device_123",
             "context_uri": "spotify:playlist:owned123",
+            "track_uri": "spotify:track:track123",
+        }
+    ]
+
+
+def test_playback_start_supports_direct_track_without_context(
+    authenticated_client, fake_spotify
+):
+    response = authenticated_client.put(
+        "/api/playback/start",
+        headers={"X-CSRF-Token": "csrf-value"},
+        json={
+            "device_id": "device_123",
+            "context_uri": None,
+            "track_uri": "spotify:track:track123",
+        },
+    )
+
+    assert response.status_code == 204
+    assert fake_spotify.playback_calls == [
+        {
+            "access_token": "server-only-access",
+            "device_id": "device_123",
+            "context_uri": None,
             "track_uri": "spotify:track:track123",
         }
     ]

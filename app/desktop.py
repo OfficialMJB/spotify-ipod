@@ -32,7 +32,9 @@ class DesktopDependencyError(RuntimeError):
 def _redacted_request_path(path: str) -> str:
     """Keep one-time Spotify authorization codes out of request logs."""
 
-    if path.startswith("/auth/callback?"):
+    if path.startswith(("/auth/callback?", "/api/search/tracks?")):
+        if path.startswith("/api/search/tracks?"):
+            return "/api/search/tracks?[query redacted]"
         return "/auth/callback?[query redacted]"
     return path
 

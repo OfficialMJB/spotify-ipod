@@ -105,6 +105,44 @@ def test_api_client_builds_exact_playback_body():
     )
 
 
+def test_api_client_builds_direct_track_playback_body_without_context():
+    captured: dict[str, object] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = request.content.decode()
+        return httpx.Response(204)
+
+    _api(handler).start_playback(
+        "access",
+        device_id="device123",
+        context_uri=None,
+        track_uri="spotify:track:track123",
+    )
+
+    assert captured["body"] == (
+        '{"uris":["spotify:track:track123"],"position_ms":0}'
+    )
+
+
+def test_api_client_uses_saved_tracks_and_track_search_endpoints():
+    captured: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(str(request.url))
+        payload = {"tracks": {"items": []}} if request.url.path.endswith("/search") else {"items": []}
+        return httpx.Response(200, json=payload)
+
+    client = _api(handler)
+    client.saved_tracks("access", offset=50, limit=50)
+    client.search_tracks("access", query="Miles Davis", offset=0, limit=10)
+
+    assert captured[0].endswith("/me/tracks?offset=50&limit=50")
+    assert "/search?" in captured[1]
+    assert "q=Miles+Davis" in captured[1]
+    assert "type=track" in captured[1]
+    assert "limit=10" in captured[1]
+
+
 def test_rate_limit_preserves_retry_after_without_retrying():
     calls = 0
 

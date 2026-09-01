@@ -1,4 +1,5 @@
 import { applyPreferences } from "./preferences.js";
+import { activeLibraryItems, normalizeLibraryView } from "./library.js";
 import { formatTime, projectedPosition } from "./player.js";
 
 export function createRenderer(documentObject = document) {
@@ -31,6 +32,9 @@ export function createRenderer(documentObject = document) {
     libraryTitle: documentObject.querySelector("#library-title"),
     libraryMessage: documentObject.querySelector("#library-message"),
     libraryList: documentObject.querySelector("#library-list"),
+    libraryTabs: [...documentObject.querySelectorAll("[data-library-view]")],
+    searchForm: documentObject.querySelector("#track-search-form"),
+    loadMoreLiked: documentObject.querySelector("#load-more-liked"),
     preferenceInputs: [...documentObject.querySelectorAll("#preferences-form input")],
   };
 
@@ -140,23 +144,52 @@ function renderPanels(elements, state) {
 
 function renderLibrary(elements, state, documentObject) {
   const library = state.library;
-  const isTracks = library.level === "tracks";
-  elements.libraryLevel.textContent = isTracks ? "Playlist" : "Your library";
-  elements.libraryTitle.textContent = isTracks ? library.selectedPlaylist?.name || "Tracks" : "Playlists";
-  elements.libraryMessage.textContent = libraryMessage(library);
+  const view = normalizeLibraryView(library.view);
+  const isPlaylistTracks = view === "playlists" && library.level === "tracks";
+  const isTrackList = view !== "playlists" || isPlaylistTracks;
+  elements.libraryLevel.textContent = view === "search"
+    ? "Spotify catalog"
+    : isPlaylistTracks
+      ? "Playlist"
+      : "Your library";
+  elements.libraryTitle.textContent = view === "liked"
+    ? "Liked Songs"
+    : view === "search"
+      ? "Search"
+      : isPlaylistTracks
+        ? library.selectedPlaylist?.name || "Tracks"
+        : "Playlists";
+  elements.libraryTabs.forEach((tab) => {
+    const selected = tab.dataset.libraryView === view;
+    tab.setAttribute("aria-selected", String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+  });
+  elements.searchForm.hidden = view !== "search";
+
+  const items = activeLibraryItems(library);
+  elements.libraryMessage.textContent = libraryMessage(library, items);
   elements.libraryMessage.hidden = !elements.libraryMessage.textContent;
   elements.libraryList.replaceChildren();
+  elements.libraryList.setAttribute(
+    "aria-label",
+    view === "liked" ? "Liked songs" : view === "search" ? "Search results" : isPlaylistTracks ? "Tracks" : "Playlists",
+  );
+  elements.loadMoreLiked.hidden = !(
+    view === "liked"
+    && library.likedPagination?.next_offset !== null
+    && library.likedPagination?.next_offset !== undefined
+  );
+  elements.loadMoreLiked.disabled = library.status === "loading";
 
-  const items = isTracks ? library.tracks : library.playlists;
   for (const [index, item] of items.entries()) {
     const listItem = documentObject.createElement("li");
     listItem.className = "library-item";
     const button = documentObject.createElement("button");
     button.type = "button";
     button.dataset.libraryIndex = String(index);
-    button.dataset.libraryKind = isTracks ? "track" : "playlist";
+    button.dataset.libraryKind = isTrackList ? "track" : "playlist";
     button.setAttribute("aria-current", String(index === library.selectedIndex));
-    button.disabled = isTracks ? item.available === false : item.eligible === false;
+    button.disabled = isTrackList ? item.available === false : item.eligible === false;
     button.title = item.name || item.title || "";
 
     const thumbnail = documentObject.createElement("span");
@@ -168,7 +201,7 @@ function renderLibrary(elements, state, documentObject) {
       image.alt = "";
       thumbnail.append(image);
     } else {
-      thumbnail.textContent = isTracks ? "♪" : "♫";
+      thumbnail.textContent = isTrackList ? "♪" : "♫";
     }
 
     const copy = documentObject.createElement("span");
@@ -176,7 +209,7 @@ function renderLibrary(elements, state, documentObject) {
     const primary = documentObject.createElement("strong");
     primary.textContent = item.name || item.title || "Untitled";
     const secondary = documentObject.createElement("small");
-    secondary.textContent = isTracks
+    secondary.textContent = isTrackList
       ? (item.available === false ? "Unavailable" : item.artists || "Unknown artist")
       : (item.eligible === false ? item.unavailableReason || "Unavailable in development mode" : playlistDescription(item));
     copy.append(primary, secondary);
@@ -184,7 +217,7 @@ function renderLibrary(elements, state, documentObject) {
     const chevron = documentObject.createElement("span");
     chevron.className = "library-chevron";
     chevron.setAttribute("aria-hidden", "true");
-    chevron.textContent = isTracks ? "▶" : "›";
+    chevron.textContent = isTrackList ? "▶" : "›";
     button.append(thumbnail, copy, chevron);
     listItem.append(button);
     const spotifyUrl = safeSpotifyUrl(item.spotifyUrl);
@@ -208,12 +241,21 @@ function renderPreferences(elements, state) {
   });
 }
 
-function libraryMessage(library) {
-  if (library.status === "loading") return library.level === "tracks" ? "Loading tracks…" : "Loading playlists…";
+function libraryMessage(library, items) {
+  const view = normalizeLibraryView(library.view);
+  if (library.status === "loading") {
+    if (view === "liked") return items.length ? "Loading more liked songs…" : "Loading liked songs…";
+    if (view === "search") return "Searching Spotify…";
+    return library.level === "tracks" ? "Loading tracks…" : "Loading playlists…";
+  }
   if (library.status === "error") return library.message || "The library could not be loaded.";
+  if (view === "search" && !library.searchHasRun) return "Search by song, artist, or album.";
   if (library.status === "loaded") {
-    const items = library.level === "tracks" ? library.tracks : library.playlists;
-    if (!items.length) return library.level === "tracks" ? "This playlist has no available tracks." : "No eligible playlists were found.";
+    if (!items.length) {
+      if (view === "liked") return "No liked songs were found.";
+      if (view === "search") return `No tracks found for “${library.searchQuery}”.`;
+      return library.level === "tracks" ? "This playlist has no available tracks." : "No eligible playlists were found.";
+    }
   }
   return "";
 }

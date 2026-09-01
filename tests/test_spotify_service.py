@@ -1,6 +1,9 @@
 import time
 
-from app.spotify.service import normalize_track_items
+import pytest
+
+from app.spotify.errors import AppError
+from app.spotify.service import normalize_track_items, validate_search_query
 from app.spotify.tokens import TokenRecord
 
 
@@ -29,6 +32,36 @@ def test_track_normalization_handles_null_local_and_missing_fields():
     assert result[0]["available"] is False
     assert result[0]["artists"] == []
     assert result[0]["album"]["image_url"] is None
+
+
+def test_track_normalization_accepts_saved_and_search_shapes():
+    track = {
+        "type": "track",
+        "id": "track123",
+        "uri": "spotify:track:track123",
+        "name": "Track name",
+        "artists": [],
+        "album": {},
+    }
+
+    result = normalize_track_items([
+        {"added_at": "2026-09-01T00:00:00Z", "track": track},
+        track,
+    ])
+
+    assert [item["id"] for item in result] == ["track123", "track123"]
+
+
+@pytest.mark.parametrize("query", [None, "", "   ", "x" * 101])
+def test_search_query_validation_rejects_invalid_values(query):
+    with pytest.raises(AppError) as raised:
+        validate_search_query(query)
+
+    assert raised.value.code == "invalid_request"
+
+
+def test_search_query_validation_normalizes_whitespace():
+    assert validate_search_query("  Miles   Davis  ") == "Miles Davis"
 
 
 def test_invalid_playlist_id_does_not_reach_spotify(

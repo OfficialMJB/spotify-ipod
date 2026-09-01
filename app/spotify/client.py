@@ -43,24 +43,61 @@ class SpotifyApiClient:
             params={"offset": offset, "limit": limit},
         )
 
+    def saved_tracks(
+        self, access_token: str, *, offset: int, limit: int
+    ) -> dict[str, Any]:
+        return self._json_request(
+            "GET",
+            "/me/tracks",
+            access_token,
+            params={"offset": offset, "limit": limit},
+        )
+
+    def search_tracks(
+        self,
+        access_token: str,
+        *,
+        query: str,
+        offset: int,
+        limit: int,
+    ) -> dict[str, Any]:
+        return self._json_request(
+            "GET",
+            "/search",
+            access_token,
+            params={
+                "q": query,
+                "type": "track",
+                "offset": offset,
+                "limit": limit,
+            },
+        )
+
     def start_playback(
         self,
         access_token: str,
         *,
         device_id: str,
-        context_uri: str,
+        context_uri: str | None,
         track_uri: str,
     ) -> None:
+        if context_uri is None:
+            playback_body: dict[str, Any] = {
+                "uris": [track_uri],
+                "position_ms": 0,
+            }
+        else:
+            playback_body = {
+                "context_uri": context_uri,
+                "offset": {"uri": track_uri},
+                "position_ms": 0,
+            }
         self._request(
             "PUT",
             "/me/player/play",
             access_token,
             params={"device_id": device_id},
-            json={
-                "context_uri": context_uri,
-                "offset": {"uri": track_uri},
-                "position_ms": 0,
-            },
+            json=playback_body,
         )
 
     def _json_request(

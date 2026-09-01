@@ -1,5 +1,11 @@
 import { api, ApiError, setCsrfToken } from "./api.js";
 import { setupDesktopWindowSizing } from "./desktop-window.js";
+import {
+  activeLibraryItems,
+  appendUniqueTracks,
+  normalizeLibraryView,
+  playbackContextUri,
+} from "./library.js";
 import { createPlayer, loadSpotifySdk, sdkErrorMessage } from "./player.js";
 import {
   applyPreferences,
@@ -27,6 +33,7 @@ setupDesktopWindowSizing();
 document.addEventListener("click", handleClick);
 document.addEventListener("change", handlePreferenceChange);
 document.addEventListener("keydown", handleKeydown);
+document.addEventListener("submit", handleSubmit);
 
 bootstrap();
 
@@ -108,6 +115,8 @@ async function handleClick(event) {
   if (actionElement) {
     const action = actionElement.dataset.action;
     if (action === "open-library") return openLibrary();
+    if (action === "library-view") return activateLibraryView(actionElement.dataset.libraryView);
+    if (action === "load-more-liked") return loadMoreLikedSongs();
     if (action === "open-settings") return openPanel("settings");
     if (action === "close-panel") return openPanel(null);
     if (action === "library-back") return libraryBack();
@@ -128,6 +137,13 @@ async function handleClick(event) {
   } else {
     await startTrack(index);
   }
+}
+
+function handleSubmit(event) {
+  if (!event.target.matches("#track-search-form")) return;
+  event.preventDefault();
+  const input = event.target.querySelector("#track-search-input");
+  searchTracks(input?.value || "");
 }
 
 function handlePreferenceChange(event) {
@@ -166,9 +182,99 @@ function handleKeydown(event) {
 
 async function openLibrary() {
   openPanel("library");
+  await activateLibraryView("liked");
+}
+
+async function activateLibraryView(candidate) {
+  const view = normalizeLibraryView(candidate);
   const state = store.getState();
-  if (state.library.status !== "idle" || state.library.playlists.length) return;
-  await loadPlaylists();
+  const library = state.library;
+  setLibrary({
+    view,
+    level: "playlists",
+    message: "",
+    selectedPlaylist: null,
+    selectedIndex: 0,
+    status: view === "liked"
+      ? (library.likedLoaded ? "loaded" : "idle")
+      : view === "playlists"
+        ? (library.playlistsLoaded ? "loaded" : "idle")
+        : (library.searchHasRun ? "loaded" : "idle"),
+  });
+
+  if (view === "liked" && !library.likedLoaded) return loadLikedSongs();
+  if (view === "playlists" && !library.playlistsLoaded) return loadPlaylists();
+  if (view === "search") {
+    requestAnimationFrame(() => document.querySelector("#track-search-input")?.focus());
+  } else {
+    focusLibraryIndex(0);
+  }
+}
+
+async function loadLikedSongs(offset = 0) {
+  const existing = store.getState().library.likedTracks;
+  setLibrary({ status: "loading", message: "", selectedIndex: 0 });
+  try {
+    const payload = await api.getLikedTracks({ offset, limit: 50 });
+    const tracks = Array.isArray(payload.items)
+      ? payload.items.map(normalizeTrack).filter((item) => item.id || item.uri)
+      : [];
+    setLibrary({
+      status: "loaded",
+      likedLoaded: true,
+      likedTracks: offset ? appendUniqueTracks(existing, tracks) : tracks,
+      likedPagination: normalizePagination(payload.pagination),
+    });
+    focusLibraryIndex(offset ? existing.length : 0);
+  } catch (error) {
+    if (expireSession(error)) return;
+    setLibrary({ status: "error", message: errorMessage(error) });
+  }
+}
+
+async function loadMoreLikedSongs() {
+  const nextOffset = store.getState().library.likedPagination?.next_offset;
+  if (!Number.isInteger(nextOffset) || nextOffset < 0) return;
+  await loadLikedSongs(nextOffset);
+}
+
+async function searchTracks(candidate) {
+  const query = candidate.trim().replace(/\s+/g, " ");
+  if (!query) {
+    return setLibrary({
+      view: "search",
+      status: "error",
+      message: "Enter a song, artist, or album to search.",
+      searchHasRun: false,
+    });
+  }
+  setLibrary({
+    view: "search",
+    status: "loading",
+    message: "",
+    searchQuery: query,
+    selectedIndex: 0,
+  });
+  try {
+    const payload = await api.searchTracks(query, { limit: 10 });
+    const results = Array.isArray(payload.items)
+      ? payload.items.map(normalizeTrack).filter((item) => item.id || item.uri)
+      : [];
+    setLibrary({
+      status: "loaded",
+      searchHasRun: true,
+      searchQuery: String(payload.query || query),
+      searchResults: results,
+    });
+    focusLibraryIndex(0);
+  } catch (error) {
+    if (expireSession(error)) return;
+    setLibrary({
+      status: "error",
+      searchHasRun: true,
+      message: errorMessage(error),
+    });
+  }
 }
 
 function openPanel(panel) {
@@ -183,7 +289,13 @@ async function loadPlaylists() {
   setLibrary({ level: "playlists", status: "loading", message: "", selectedIndex: 0 });
   try {
     const playlists = (await api.getPlaylists()).map(normalizePlaylist).filter((item) => item.id);
-    setLibrary({ status: "loaded", playlists, tracks: [], selectedPlaylist: null });
+    setLibrary({
+      status: "loaded",
+      playlistsLoaded: true,
+      playlists,
+      tracks: [],
+      selectedPlaylist: null,
+    });
     focusLibraryIndex(0);
   } catch (error) {
     if (expireSession(error)) return;
@@ -195,6 +307,7 @@ async function openPlaylist(index) {
   const playlist = store.getState().library.playlists[index];
   if (!playlist) return;
   setLibrary({
+    view: "playlists",
     level: "tracks",
     status: "loading",
     message: "",
@@ -214,7 +327,7 @@ async function openPlaylist(index) {
 
 async function startTrack(index) {
   const state = store.getState();
-  const track = state.library.tracks[index];
+  const track = activeLibraryItems(state.library)[index];
   const deviceId = state.player.deviceId;
   if (!track || track.available === false) return;
   if (!spotifyPlayer || !deviceId) {
@@ -226,7 +339,7 @@ async function startTrack(index) {
     await spotifyPlayer.activateElement();
     await api.startPlayback({
       device_id: deviceId,
-      context_uri: state.library.selectedPlaylist?.uri || null,
+      context_uri: playbackContextUri(state.library),
       track_uri: track.uri,
     });
     setNotice(null);
@@ -251,7 +364,7 @@ async function runPlayerCommand(method) {
 
 function libraryBack() {
   const state = store.getState();
-  if (state.library.level === "tracks") {
+  if (state.library.view === "playlists" && state.library.level === "tracks") {
     const priorIndex = Math.max(0, state.library.playlists.findIndex((item) => item.id === state.library.selectedPlaylist?.id));
     setLibrary({
       level: "playlists",
@@ -343,6 +456,23 @@ function normalizeTrack(item) {
     artworkUrl: String(track.artwork_url || track.artworkUrl || track.album?.image_url || track.album?.images?.[0]?.url || ""),
     spotifyUrl: String(track.external_urls?.spotify || track.spotify_url || track.spotifyUrl || ""),
     available: item.available ?? !track.is_local,
+  };
+}
+
+function normalizePagination(value) {
+  const pagination = value && typeof value === "object" ? value : {};
+  const rawNextOffset = pagination.next_offset;
+  const nextOffset = Number(rawNextOffset);
+  return {
+    offset: Number.isInteger(Number(pagination.offset)) ? Number(pagination.offset) : 0,
+    limit: Number.isInteger(Number(pagination.limit)) ? Number(pagination.limit) : 0,
+    total: Number.isInteger(Number(pagination.total)) ? Number(pagination.total) : 0,
+    next_offset: rawNextOffset !== null
+      && rawNextOffset !== undefined
+      && Number.isInteger(nextOffset)
+      && nextOffset >= 0
+      ? nextOffset
+      : null,
   };
 }
 

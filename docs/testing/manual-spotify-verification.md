@@ -27,12 +27,24 @@ Complete this checklist with a Spotify Premium account after the automated suite
 
 ## Library browsing
 
+- [ ] Library opens on Liked Songs by default.
+- [ ] Selecting a liked song starts direct playback.
+- [ ] Load More appends another page without replacing the songs already shown.
+- [ ] The Playlists tab remains accessible after visiting another library view.
 - [ ] Owned playlists appear.
 - [ ] Collaborative playlists appear when available.
 - [ ] Ineligible playlists are disabled with an explanation.
 - [ ] Opening an eligible playlist shows its available tracks.
 - [ ] Empty playlists, unavailable tracks, and missing artwork do not break the interface.
 - [ ] Spotify metadata and artwork include appropriate Spotify links or attribution.
+
+## Track search
+
+- [ ] Submitting a track, artist, or album query returns relevant tracks.
+- [ ] Blank search input is rejected without making a request.
+- [ ] A no-results search shows a clear empty state.
+- [ ] Selecting a search result starts direct playback.
+- [ ] Search text does not appear in desktop request logs.
 
 ## Browser playback
 
@@ -75,3 +87,12 @@ Spotify account type:
 Result:
 Notes or issue links:
 ```
+
+### 2026-09-01 desktop feature verification
+
+- **Environment:** macOS desktop application using pywebview
+- **Observed:** Fresh authorization, Liked Songs as the default Library view,
+  liked-song playback, playlist browsing and playback, track search and result
+  playback, and content-fitting window behavior all worked as intended.
+- **Not observed:** Load More for Liked Songs was not manually checked. It is
+  covered by automated tests and remains a manual follow-up.

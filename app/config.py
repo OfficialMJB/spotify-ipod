@@ -12,6 +12,7 @@ SPOTIFY_SCOPES = (
     "streaming",
     "playlist-read-private",
     "playlist-read-collaborative",
+    "user-library-read",
     "user-read-email",
     "user-read-private",
     "user-modify-playback-state",

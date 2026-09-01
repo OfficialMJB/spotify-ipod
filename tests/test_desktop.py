@@ -197,3 +197,6 @@ def test_desktop_request_logs_redact_oauth_callback_query():
     assert _redacted_request_path("/api/playlists?offset=0") == (
         "/api/playlists?offset=0"
     )
+    assert _redacted_request_path("/api/search/tracks?q=private+query") == (
+        "/api/search/tracks?[query redacted]"
+    )

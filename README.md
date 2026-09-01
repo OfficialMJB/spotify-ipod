@@ -6,24 +6,27 @@ A local, non-commercial portfolio MVP that explores a compact, customizable inte
 
 ## Project status
 
-The first local MVP is implemented on `feature/pocket-player-mvp`:
+The local MVP now includes:
 
 - Spotify Authorization Code sign-in with server-side token storage and refresh
-- Eligible playlist and track browsing
+- Liked Songs as the default library view, with paginated loading
+- Eligible playlist browsing and focused Spotify track search
 - Browser playback integration through the Spotify Web Playback SDK
+- A content-fitting pywebview desktop window for running the player as a local application
 - Compact and expanded player modes
 - Pocket, Minimal, and Retro themes with three controlled accent choices
 - Offline Python and JavaScript tests for the application-owned behavior
 
 The automated suite does not use Spotify credentials or make Spotify network calls. Real OAuth and audio playback still require the manual Premium-account verification documented in [docs/testing/manual-spotify-verification.md](docs/testing/manual-spotify-verification.md).
 
-The revised MVP, user flow, architecture boundary, acceptance criteria, implementation slices, and API draft are documented in [docs/planning/mvp.md](docs/planning/mvp.md). The shift from a literal iPod-style interface to a customizable pocket player is recorded in [ADR 0001](docs/decisions/0001-customizable-pocket-player.md).
+The revised MVP, user flow, architecture boundary, acceptance criteria, implementation slices, and API draft are documented in [docs/planning/mvp.md](docs/planning/mvp.md). The Liked Songs and search slice is documented in [docs/planning/liked-songs-search.md](docs/planning/liked-songs-search.md). The shift from a literal iPod-style interface to a customizable pocket player is recorded in [ADR 0001](docs/decisions/0001-customizable-pocket-player.md).
 
 ## Chosen stack
 
 - Python and Flask for OAuth, session handling, and a small API boundary
 - HTTPX for narrow, timeout-protected Spotify HTTP adapters
 - HTML, CSS, and vanilla JavaScript for the interface
+- pywebview for the content-fitting local desktop window
 - Spotify Web API for library metadata
 - Spotify Web Playback SDK for in-browser playback
 - pytest for backend tests and browser-oriented tests for critical UI behavior
@@ -37,7 +40,7 @@ The MVP is a small Spotify-connected player with:
 
 - A compact mode for essential track information and playback controls
 - An expanded mode for artwork, progress, library access, and customization
-- A focused playlist and track browser
+- Liked Songs, eligible playlists, and focused track search
 - Three predefined visual themes and one accent-color preference
 - Locally remembered display preferences
 

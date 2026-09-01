@@ -70,6 +70,13 @@ export const api = Object.freeze({
   getPlayerToken: () => request("/api/player-token"),
   getPlaylists: async () => asItems(await request("/api/playlists")),
   getTracks: async (playlistId) => asItems(await request(`/api/playlists/${encodeURIComponent(playlistId)}/tracks`)),
+  getLikedTracks: ({ offset = 0, limit = 50 } = {}) => request(
+    `/api/library/tracks?offset=${encodeURIComponent(offset)}&limit=${encodeURIComponent(limit)}`,
+  ),
+  searchTracks: (query, { offset = 0, limit = 10 } = {}) => {
+    const parameters = new URLSearchParams({ q: query, offset: String(offset), limit: String(limit) });
+    return request(`/api/search/tracks?${parameters}`);
+  },
   startPlayback: (body) => request("/api/playback/start", { method: "PUT", body: JSON.stringify(body) }),
   logout: () => request("/auth/logout", { method: "POST" }),
 });

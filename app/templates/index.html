@@ -105,8 +105,19 @@
           </div>
           <button class="icon-button" type="button" data-action="close-panel" aria-label="Close library" title="Close">×</button>
         </header>
+        <div class="library-tabs" role="tablist" aria-label="Music library views">
+          <button type="button" role="tab" data-action="library-view" data-library-view="liked" aria-controls="library-list">Liked Songs</button>
+          <button type="button" role="tab" data-action="library-view" data-library-view="playlists" aria-controls="library-list">Playlists</button>
+          <button type="button" role="tab" data-action="library-view" data-library-view="search" aria-controls="library-list">Search</button>
+        </div>
+        <form id="track-search-form" class="track-search" role="search" hidden>
+          <label class="visually-hidden" for="track-search-input">Search Spotify tracks</label>
+          <input id="track-search-input" name="q" type="search" maxlength="100" autocomplete="off" placeholder="Song, artist, or album" required>
+          <button type="submit">Search</button>
+        </form>
         <div id="library-message" class="panel-message" role="status" aria-live="polite"></div>
         <ul id="library-list" class="library-list" aria-label="Playlists"></ul>
+        <button id="load-more-liked" class="secondary-button" type="button" data-action="load-more-liked" hidden>Load more liked songs</button>
       </aside>
 
       <aside id="settings-panel" class="side-panel" aria-labelledby="settings-title" hidden>
