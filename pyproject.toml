@@ -5,10 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "spotify-ipod"
 version = "0.1.0"
-description = "An iPod-inspired interface for browsing and playing Spotify music."
+description = "A compact, customizable interface for browsing and playing Spotify music."
 requires-python = ">=3.14,<3.15"
 dependencies = [
-    "Flask>=3.1,<4",
+    "Flask[dotenv]>=3.1,<4",
+    "httpx>=0.28,<1",
 ]
 
 [project.optional-dependencies]
