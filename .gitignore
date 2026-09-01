@@ -23,6 +23,9 @@ instance/
 .vscode/
 .DS_Store
 
+# Superseded generated UX drawing references kept only on this machine
+docs/design/references/*-reference*.pdf
+
 # Python packaging
 *.egg-info/
 build/
