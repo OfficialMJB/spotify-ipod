@@ -1,6 +1,6 @@
 # Desktop Runtime Feasibility Spike
 
-- **Status:** In progress
+- **Status:** Phase 1 validated
 - **Branch:** `spike/desktop-runtime`
 - **Date:** 2026-08-31
 
@@ -142,6 +142,24 @@ This spike will not add:
 - Manual verification notes for authentication and playback
 - An accepted desktop-runtime architecture decision record
 - Updated setup documentation after the runtime decision is made
+
+## Phase 1 result
+
+Validated on macOS with Python 3.14 and pywebview 6.2.1:
+
+- The existing Flask UI opened in a native `WKWebView` window.
+- The window resized to the welcome screen, compact player, expanded player,
+  and side-panel layouts without leaving a large unused viewport.
+- Closing the window stopped the loopback server and released port 5050.
+- The existing `.env` configuration loaded through the desktop entry point.
+- Spotify authorization completed in the embedded window.
+- The Web Playback SDK initialized, playlists loaded, and a playback-start
+  request completed successfully during the manual smoke test.
+
+The prototype demonstrates that pywebview is a viable shell for this macOS
+portfolio application. External-system-browser OAuth remains a pre-packaging
+security improvement; the current local prototype uses the working embedded
+flow.
 
 ## References
 
