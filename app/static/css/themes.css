@@ -1,0 +1,70 @@
+:root,
+html[data-theme="pocket"] {
+  --page: #101310;
+  --page-glow: rgba(60, 100, 76, 0.28);
+  --surface: rgba(29, 34, 30, 0.96);
+  --control: #2a302b;
+  --artwork: #222823;
+  --text: #f5f7f5;
+  --muted: #afb9b1;
+  --border: rgba(255, 255, 255, 0.1);
+  --shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.35);
+  --radius: 1.6rem;
+  --status-background: #2d2517;
+  --status-border: #69522e;
+  --status-text: #ffe1ab;
+}
+
+html[data-theme="minimal"] {
+  --page: #f1f2f2;
+  --page-glow: rgba(105, 120, 135, 0.16);
+  --surface: rgba(255, 255, 255, 0.96);
+  --control: #e9ebec;
+  --artwork: #e2e5e6;
+  --text: #151719;
+  --muted: #60676c;
+  --border: rgba(0, 0, 0, 0.11);
+  --shadow: 0 1.5rem 4rem rgba(35, 43, 48, 0.13);
+  --radius: 0.8rem;
+  --status-background: #fff4d9;
+  --status-border: #c99a38;
+  --status-text: #61460c;
+}
+
+html[data-theme="retro"] {
+  --page: #28261f;
+  --page-glow: rgba(218, 183, 93, 0.2);
+  --surface: #ded8b7;
+  --control: #c5c09f;
+  --artwork: #b4af90;
+  --text: #25291f;
+  --muted: #555b45;
+  --border: rgba(37, 41, 31, 0.2);
+  --shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.3);
+  --radius: 0.45rem;
+  --status-background: #f2cf80;
+  --status-border: #88712f;
+  --status-text: #332a0e;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+html[data-accent="green"] {
+  --accent: #1ed760;
+  --accent-text: #07170d;
+  --accent-glow: rgba(30, 215, 96, 0.24);
+  --focus: #64f093;
+}
+
+html[data-accent="blue"] {
+  --accent: #47a7ff;
+  --accent-text: #071420;
+  --accent-glow: rgba(71, 167, 255, 0.24);
+  --focus: #7fc2ff;
+}
+
+html[data-accent="orange"] {
+  --accent: #ff8a3d;
+  --accent-text: #1b0b02;
+  --accent-glow: rgba(255, 138, 61, 0.24);
+  --focus: #ffad76;
+}

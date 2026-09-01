@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en" data-theme="pocket" data-accent="green" data-app-name="{{ display_name }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark light">
+    <meta name="description" content="A compact, customizable interface for your Spotify playlists.">
+    <title>{{ display_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to player</a>
+
+    <main id="main-content" class="app-shell" tabindex="-1">
+      <section class="player-card" aria-labelledby="app-title">
+        <header class="app-header">
+          <div>
+            <p class="eyebrow">Your music, close at hand</p>
+            <h1 id="app-title">{{ display_name }}</h1>
+          </div>
+          <div class="header-actions" data-authenticated-only hidden>
+            <button class="icon-button" type="button" data-action="open-settings" aria-label="Customize player" title="Customize player">
+              <span aria-hidden="true">Aa</span>
+            </button>
+            <button class="text-button" type="button" data-action="logout">Sign out</button>
+          </div>
+        </header>
+
+        <div id="status-region" class="status-banner" role="status" aria-live="polite" hidden></div>
+
+        <section id="welcome-view" class="view welcome-view" aria-labelledby="welcome-title">
+          <div class="welcome-mark" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <p class="eyebrow">A focused Spotify companion</p>
+          <h2 id="welcome-title">A small player with room for your style.</h2>
+          <p id="welcome-description" class="lede">
+            Sign in to browse your playlists and listen in this browser. Spotify Premium is required for playback.
+          </p>
+          <a id="login-link" class="primary-button" href="/auth/login">Sign in with Spotify</a>
+          <p id="configuration-note" class="helper-text" hidden>
+            Spotify credentials have not been configured yet. Add them to your local <code>.env</code> file, then restart the server.
+          </p>
+          <details class="permission-details">
+            <summary>What access does this use?</summary>
+            <p>Read access to your eligible playlists, permission to stream through the browser player, and permission to control that playback. Refresh tokens stay server-side; the short-lived player token is never saved in browser storage.</p>
+          </details>
+        </section>
+
+        <section id="player-view" class="view player-view" aria-label="Music player" hidden>
+          <div class="now-playing">
+            <div class="artwork-frame">
+              <img id="artwork" alt="" hidden>
+              <div id="artwork-placeholder" class="artwork-placeholder" aria-hidden="true">♪</div>
+            </div>
+            <div class="track-copy">
+              <p id="playback-label" class="eyebrow">Nothing playing</p>
+              <h2 id="track-title">Choose a track</h2>
+              <p id="track-artist" class="secondary-text">Open your library to get started</p>
+              <p id="track-album" class="album-text"></p>
+              <a id="spotify-link" class="spotify-link" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer">Open in Spotify <span aria-hidden="true">↗</span></a>
+            </div>
+          </div>
+
+          <div class="progress-group">
+            <label class="visually-hidden" for="track-progress">Playback progress</label>
+            <progress id="track-progress" max="1" value="0">0%</progress>
+            <div class="time-row" aria-hidden="true">
+              <span id="position-time">0:00</span>
+              <span id="duration-time">0:00</span>
+            </div>
+          </div>
+
+          <div class="transport" aria-label="Playback controls">
+            <button class="transport-button" type="button" data-action="previous" aria-label="Previous track" disabled>
+              <span aria-hidden="true">◀◀</span>
+            </button>
+            <button class="transport-button play-button" type="button" data-action="toggle-playback" aria-label="Play" disabled>
+              <span data-play-icon aria-hidden="true">▶</span>
+            </button>
+            <button class="transport-button" type="button" data-action="next" aria-label="Next track" disabled>
+              <span aria-hidden="true">▶▶</span>
+            </button>
+          </div>
+
+          <nav class="player-nav" aria-label="Player views">
+            <button class="nav-button" type="button" data-action="open-library" aria-controls="library-panel">Library</button>
+            <button class="nav-button" type="button" data-action="toggle-mode" aria-label="Switch to compact player">
+              <span data-mode-label>Compact</span>
+            </button>
+            <button class="nav-button" type="button" data-action="open-settings" aria-controls="settings-panel">Customize</button>
+          </nav>
+
+          <p class="spotify-attribution">Music metadata and playback provided by Spotify.</p>
+        </section>
+      </section>
+
+      <aside id="library-panel" class="side-panel" aria-labelledby="library-title" hidden>
+        <header class="panel-header">
+          <button class="icon-button" type="button" data-action="library-back" aria-label="Back" title="Back">←</button>
+          <div>
+            <p class="eyebrow" id="library-level">Your library</p>
+            <h2 id="library-title">Playlists</h2>
+          </div>
+          <button class="icon-button" type="button" data-action="close-panel" aria-label="Close library" title="Close">×</button>
+        </header>
+        <div id="library-message" class="panel-message" role="status" aria-live="polite"></div>
+        <ul id="library-list" class="library-list" aria-label="Playlists"></ul>
+      </aside>
+
+      <aside id="settings-panel" class="side-panel" aria-labelledby="settings-title" hidden>
+        <header class="panel-header">
+          <div>
+            <p class="eyebrow">Appearance</p>
+            <h2 id="settings-title">Customize</h2>
+          </div>
+          <button class="icon-button" type="button" data-action="close-panel" aria-label="Close customization" title="Close">×</button>
+        </header>
+
+        <form id="preferences-form">
+          <fieldset>
+            <legend>Player size</legend>
+            <div class="segmented-control">
+              <label><input type="radio" name="mode" value="compact"><span>Compact</span></label>
+              <label><input type="radio" name="mode" value="expanded"><span>Expanded</span></label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Theme</legend>
+            <div class="theme-options">
+              <label><input type="radio" name="theme" value="pocket"><span><b>Pocket</b><small>Soft and playful</small></span></label>
+              <label><input type="radio" name="theme" value="minimal"><span><b>Minimal</b><small>Quiet and crisp</small></span></label>
+              <label><input type="radio" name="theme" value="retro"><span><b>Retro</b><small>Warm display tones</small></span></label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Accent color</legend>
+            <div class="accent-options">
+              <label><input type="radio" name="accent" value="green"><span class="swatch swatch-green">Green</span></label>
+              <label><input type="radio" name="accent" value="blue"><span class="swatch swatch-blue">Blue</span></label>
+              <label><input type="radio" name="accent" value="orange"><span class="swatch swatch-orange">Orange</span></label>
+            </div>
+          </fieldset>
+
+          <button class="secondary-button" type="button" data-action="reset-preferences">Reset to defaults</button>
+        </form>
+      </aside>
+    </main>
+
+    <noscript>This player requires JavaScript to connect to Spotify.</noscript>
+    <script type="module" src="{{ url_for('static', filename='js/app.js') }}"></script>
+  </body>
+</html>

@@ -1,24 +1,47 @@
-# Spotify iPod
+# Spotify Pocket Player
 
-A planned, non-commercial portfolio project that explores an iPod-inspired interface for browsing and playing a user's Spotify music.
+A local, non-commercial portfolio MVP that explores a compact, customizable interface for browsing and playing a user's Spotify music.
 
-> The repository name is a working development name, not a claim of affiliation with or endorsement by Spotify or Apple. A distinct public-facing name should be chosen before publishing the application.
+> "Spotify Pocket Player" and the repository name `spotify-ipod` are working development names, not claims of affiliation with or endorsement by Spotify. A distinct public-facing name should be chosen before publishing the application.
 
 ## Project status
 
-Planning and development-environment setup only. Python dependencies are declared, but no application code has been added yet.
+The first local MVP is implemented on `feature/pocket-player-mvp`:
 
-The agreed MVP, user flow, architecture boundary, acceptance criteria, implementation slices, and API draft are documented in [docs/planning/mvp.md](docs/planning/mvp.md).
+- Spotify Authorization Code sign-in with server-side token storage and refresh
+- Eligible playlist and track browsing
+- Browser playback integration through the Spotify Web Playback SDK
+- Compact and expanded player modes
+- Pocket, Minimal, and Retro themes with three controlled accent choices
+- Offline Python and JavaScript tests for the application-owned behavior
+
+The automated suite does not use Spotify credentials or make Spotify network calls. Real OAuth and audio playback still require the manual Premium-account verification documented in [docs/testing/manual-spotify-verification.md](docs/testing/manual-spotify-verification.md).
+
+The revised MVP, user flow, architecture boundary, acceptance criteria, implementation slices, and API draft are documented in [docs/planning/mvp.md](docs/planning/mvp.md). The shift from a literal iPod-style interface to a customizable pocket player is recorded in [ADR 0001](docs/decisions/0001-customizable-pocket-player.md).
 
 ## Chosen stack
 
 - Python and Flask for OAuth, session handling, and a small API boundary
+- HTTPX for narrow, timeout-protected Spotify HTTP adapters
 - HTML, CSS, and vanilla JavaScript for the interface
 - Spotify Web API for library metadata
 - Spotify Web Playback SDK for in-browser playback
 - pytest for backend tests and browser-oriented tests for critical UI behavior
+- Node's built-in test runner for framework-free JavaScript module tests
 
 This stack keeps the backend Python-first and the browser code small while still supporting Spotify's JavaScript playback SDK.
+
+## Product direction
+
+The MVP is a small Spotify-connected player with:
+
+- A compact mode for essential track information and playback controls
+- An expanded mode for artwork, progress, library access, and customization
+- A focused playlist and track browser
+- Three predefined visual themes and one accent-color preference
+- Locally remembered display preferences
+
+The project may borrow ideas from pocket music players, but it will develop its own layout and visual identity rather than reproduce an iPod body or click wheel.
 
 ## Local development setup
 
@@ -26,7 +49,8 @@ This stack keeps the backend Python-first and the browser code small while still
 
 - Git
 - Python 3.14
-- A Spotify Premium account and Spotify developer application before OAuth integration begins
+- Node.js when running the JavaScript tests; it is not required to run the application
+- A Spotify Premium account and Spotify developer application for real OAuth and playback; neither is required for the offline tests or welcome screen
 
 ### Create the environment
 
@@ -64,7 +88,7 @@ Use `deactivate` when you want to leave the environment.
 
 ### Configure local secrets
 
-When Spotify integration begins, copy the configuration template:
+Copy the configuration template if `.env` does not already exist:
 
 ```bash
 cp .env.example .env
@@ -76,7 +100,45 @@ Fill in the real values only in `.env`. Never add credentials or tokens to `.env
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-The Spotify redirect URI in `.env` must exactly match the URI registered in the Spotify Developer Dashboard.
+Set all four variables. The Spotify redirect URI in `.env` and in the Spotify Developer Dashboard must be exactly:
+
+```text
+http://127.0.0.1:5050/auth/callback
+```
+
+Do not replace `127.0.0.1` with `localhost`.
+
+### Run the application
+
+```bash
+python -m flask --app app run
+```
+
+Open [http://127.0.0.1:5050](http://127.0.0.1:5050). Port 5050 avoids the AirPlay Receiver service that commonly occupies port 5000 on macOS. The welcome screen works without Spotify credentials and explains when local configuration is incomplete.
+
+The MVP uses an in-memory server-side token store. Restarting Flask intentionally signs the user out.
+
+## Tests
+
+Run the offline Python suite:
+
+```bash
+python -m pytest
+```
+
+If Node.js is installed, run the framework-free JavaScript suite:
+
+```bash
+node --test tests/js/*.test.mjs
+```
+
+Finish a local checkpoint with:
+
+```bash
+python -m pip check
+git diff --check
+git status --short --branch
+```
 
 ## Development workflow
 
@@ -98,16 +160,20 @@ The Spotify redirect URI in `.env` must exactly match the URI registered in the 
 
 These constraints should be rechecked against Spotify's official documentation before implementation or release because platform rules can change.
 
-## Planned repository shape
+## Repository shape
 
-The implementation should add only the directories needed by each vertical slice. The likely shape is:
+The implementation uses only the directories needed by the current vertical slice:
 
 ```text
 spotify-ipod/
-├── app/                 # Flask application and Spotify integration
-├── static/              # CSS, JavaScript, and local UI assets
-├── templates/           # Accessible HTML templates
-├── tests/               # Behavior-focused automated tests
+├── app/
+│   ├── routes/          # Page, OAuth, and same-origin API routes
+│   ├── spotify/         # OAuth, Web API, service, errors, and token store
+│   ├── static/          # CSS and vanilla JavaScript modules
+│   └── templates/       # Accessible HTML application shell
+├── tests/               # Offline Python and JavaScript behavior tests
+├── docs/design/         # Reviewed UX artifacts
+├── docs/decisions/      # Architecture and product decision records
 ├── docs/planning/       # Product and technical planning
 ├── .env.example         # Variable names only; never real credentials
 ├── .gitignore
@@ -115,12 +181,12 @@ spotify-ipod/
 └── README.md
 ```
 
-## Before implementation
+## Known MVP limitations
 
-1. Review and accept the MVP boundaries in the planning document.
-2. Confirm access to a Spotify Premium account.
-3. Create one application in the Spotify Developer Dashboard and register an exact local redirect URI.
-4. Finish and review the development-environment setup branch.
-5. Add configuration and a minimal Flask health page before building Spotify features.
+- This is a local, single-user, single-process application.
+- Restarting Flask clears the in-memory Spotify session.
+- Real OAuth, playback, responsive layout, and screen-reader behavior remain manual verification items until tested with credentials and browsers.
+- Revised pocket-player wireframes are still being documented, so later visual polish may change without changing the architecture.
+- The working product and repository names should be reconsidered before public release.
 
-No credentials, tokens, or generated local databases should be committed.
+No credentials, tokens, generated local databases, or `.env` file should be committed.

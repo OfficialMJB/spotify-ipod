@@ -1,20 +1,20 @@
-# Spotify iPod MVP Plan
+# Spotify Pocket Player MVP Plan
 
 ## 1. Decision summary
 
-Build a desktop-first, local web application that lets one Spotify Premium user sign in, browse playlists they own or collaborate on, select a track, and control playback through an iPod-inspired interface.
+Build a desktop-first, local web application that lets one Spotify Premium user sign in, browse playlists they own or collaborate on, select a track, and control playback through a compact, customizable player interface.
 
-The MVP is a portfolio prototype for learning OAuth, API integration, UI state, accessibility, and testing. It is not a commercial product and is not intended for public scale.
+The player has compact and expanded modes, a focused music browser, and a small set of appearance preferences. The MVP is a portfolio prototype for learning OAuth, API integration, UI state, accessible customization, and testing. It is not a commercial product and is not intended for public scale.
 
 ## 2. Problem and product goal
 
-Modern music applications expose many actions at once. This project tests a deliberately focused interaction model: can a user reach familiar music and control playback through a compact, nostalgic interface without losing clarity or accessibility?
+Modern music applications expose many actions at once. This project tests a deliberately focused interaction model: can a user reach familiar music, control playback, and personalize a small player without losing clarity or accessibility?
 
 The MVP succeeds when the developer can demonstrate this complete path reliably:
 
 ```text
 Sign in -> View playlists -> Open one playlist -> Select a track
-        -> Hear playback -> Pause/resume -> Skip forward/back
+        -> Hear playback -> Use compact/expanded player -> Choose a theme
 ```
 
 ## 3. Target user
@@ -24,7 +24,9 @@ The initial user is the developer using a Spotify Premium account on a desktop b
 ## 4. Product principles
 
 - Make the current selection and available action obvious.
-- Preserve the feel of a click-wheel player without requiring a physical rotary gesture.
+- Keep the player useful at both compact and expanded sizes.
+- Give the interface its own identity rather than reproducing a specific hardware product.
+- Offer bounded customization that cannot make essential controls inaccessible or unreadable.
 - Support mouse, touch, and keyboard input for every essential action.
 - Show useful loading, empty, authentication, and playback-error states.
 - Request only the Spotify permissions the MVP actually uses.
@@ -46,24 +48,30 @@ The initial user is the developer using a Spotify Premium account on a desktop b
    - Explain that development mode cannot retrieve the contents of other followed playlists.
    - Support loading, empty, and API-error states.
 
-3. **iPod-inspired navigation**
-   - Provide Menu/Back, Previous, Next, Play/Pause, and Select actions.
-   - Move through menu items with explicit controls and keyboard equivalents.
-   - Keep a visible focus/selection state.
-   - Use a circular visual control, but do not require rotary gesture recognition in the MVP.
+3. **Compact and expanded player modes**
+   - Provide Play/Pause, Previous, and Next in both modes.
+   - Show track title, artist, playback status, and progress in compact mode.
+   - Show artwork, album, detailed progress, library access, and customization access in expanded mode.
+   - Switch modes without interrupting playback or losing the current library selection.
 
-4. **Now Playing screen**
+4. **Now Playing information**
    - Show track title, artist, album, playback status, progress, and duration.
    - Show unmodified album art only when it fits the required display treatment.
    - Include Spotify attribution and a link to the corresponding Spotify content.
 
-5. **Playback**
+5. **Bounded customization**
+   - Offer three predefined themes: Pocket, Minimal, and Retro.
+   - Allow one accent-color preference within accessible contrast limits.
+   - Remember display mode and theme preferences in local browser storage.
+   - Provide a clear reset-to-default action.
+
+6. **Playback**
    - Initialize the Spotify Web Playback SDK as a browser device.
    - Start a selected track.
    - Pause/resume and move to the previous or next track.
    - Handle Premium/account, browser autoplay, inactive-device, and playback errors visibly.
 
-6. **Responsive baseline**
+7. **Responsive baseline**
    - Work in current desktop Chrome, Firefox, Safari, and Edge at a practical portfolio-demo size.
    - Remain usable on a narrow screen, while documenting that mobile autoplay behavior can differ.
 
@@ -76,8 +84,9 @@ The initial user is the developer using a Spotify Premium account on a desktop b
 - User accounts separate from Spotify
 - A persistent application database
 - Native mobile or desktop applications
-- A realistic rotary/drag wheel gesture, haptics, or sound effects
-- Themes, visualizers, lyrics, queues, shuffle, or repeat
+- Free-form drag-and-drop layout editing
+- User-authored themes, custom CSS, arbitrary control placement, or theme sharing
+- Visualizers, lyrics, editable queues, shuffle, or repeat
 - Public deployment, monetization, or an extended-quota application
 
 ## 6. User stories and acceptance criteria
@@ -103,7 +112,7 @@ Acceptance criteria:
 - The playlist menu has a clear selected item.
 - Selecting a playlist opens its track list.
 - A followed playlist whose contents are unavailable under development mode is excluded or clearly identified rather than opening an empty track list.
-- Menu/Back returns to the previous screen and restores a sensible selection.
+- Back returns to the previous screen and restores a sensible selection.
 - Empty playlists, unavailable tracks, and API failures do not produce a blank screen.
 - Long names remain readable through truncation plus an accessible way to obtain the full text.
 
@@ -131,6 +140,18 @@ Acceptance criteria:
 - Space toggles playback when focus is not in another interactive control.
 - Visible focus and semantic labels make controls understandable to assistive technology.
 
+### Story E: Personalize the player
+
+As a user, I want to choose the player size and appearance so that the interface fits my preferences without becoming difficult to use.
+
+Acceptance criteria:
+
+- The user can switch between compact and expanded modes without interrupting playback.
+- Pocket, Minimal, and Retro themes change presentation without changing application behavior.
+- The selected mode, theme, and accent preference survive a page refresh on the same browser.
+- Every preset keeps text and controls readable with visible keyboard focus.
+- Reset restores the documented default appearance.
+
 ## 7. Primary user flow
 
 ```mermaid
@@ -150,7 +171,13 @@ flowchart TD
     J -- "No" --> L["Playback recovery state"]
     L --> I
     K --> M["Pause, resume, previous, or next"]
-    K -->|"Menu/Back"| H
+    M --> K
+    K --> N["Switch compact or expanded mode"]
+    N --> K
+    K --> O["Open customization panel"]
+    O --> P["Choose preset theme or accent"]
+    P --> K
+    K -->|"Back"| H
 ```
 
 ## 8. Screen plan
@@ -162,37 +189,62 @@ flowchart TD
 - Sign-in action
 - Privacy/permissions summary
 
-### Playlist menu
+### Compact player
+
+- Small artwork thumbnail when space permits
+- Track title and artist
+- Truthful progress or playback status
+- Previous, Play/Pause, and Next
+- Expand action
+- Required Spotify attribution/link treatment
+
+### Expanded player
+
+- Unmodified album artwork
+- Track, artist, and album metadata
+- Progress and duration
+- Previous, Play/Pause, and Next
+- Library, customization, compact-mode, and Spotify-link actions
+
+### Playlist and track browser
 
 - Screen title
 - A short, paginated or incrementally loaded playlist list
 - Current selection
 - Loading, empty, and error variants
-
-### Track menu
-
 - Playlist name
 - Track title and artist in each row
 - Unavailable-track treatment
 - Back navigation
 
-### Now Playing
+### Customization panel
 
-- Required Spotify attribution
-- Unmodified album artwork where space allows
-- Track, artist, and album metadata
-- Progress and playback state
-- Link to open the content in Spotify
+- Compact/expanded mode choice
+- Pocket, Minimal, and Retro theme presets
+- Accent-color choice constrained to accessible options
+- Live preview of the current choice
+- Apply and reset actions
 
 ### Shared controls
 
-- Menu/Back at the top of the wheel
-- Previous and Next at the left and right
-- Play/Pause at the bottom
-- Select in the center
-- Visible keyboard focus independent of the selected menu row
+- Previous, Play/Pause, and Next remain consistently placed within each mode.
+- Library, Back, Expand/Compact, Customize, and Open in Spotify use visible labels or accessible names.
+- Visible keyboard focus remains independent of the selected library row.
 
-Low-fidelity wireframes should be drawn and reviewed before styling begins.
+The implemented styling is a provisional semantic baseline. Revised low-fidelity wireframes should be drawn and reviewed before the final visual-polish pass.
+
+The earlier generated reference PDFs for Diagrams 03-07 depict the superseded iPod-body concept and are not authoritative drawing references. New in-chat wireframes should be used for the revised artifacts.
+
+### Revised UX artifact sequence
+
+1. **Diagram 01 - MVP Use-Case Diagram:** add `Customize player`.
+2. **Diagram 02 - Primary User Flow:** include compact/expanded switching and customization.
+3. **Diagram 03 - Compact Player Wireframe**
+4. **Diagram 04 - Expanded Player Wireframe**
+5. **Diagram 05 - Playlist and Track Browser Wireframe**
+6. **Diagram 06 - Customization Panel Wireframe**
+7. **Diagram 07 - Welcome and Authorization Wireframe**
+8. **Diagram 08 - Loading, Empty, and Error-State Wireframes**
 
 ## 9. Proposed technical boundary
 
@@ -220,9 +272,9 @@ flowchart LR
 
 No application database is needed for the single-user MVP. Authentication state should be session-scoped; the first local implementation may require signing in again after the server restarts rather than persisting refresh tokens prematurely.
 
-## 10. Draft application routes
+## 10. Implemented application routes
 
-These are contracts to review before implementation, not implemented endpoints.
+These routes form the current same-origin boundary between the browser and Flask.
 
 | Method | Route | Purpose |
 | --- | --- | --- |
@@ -234,8 +286,9 @@ These are contracts to review before implementation, not implemented endpoints.
 | `GET` | `/api/player-token` | Return a valid short-lived token for the playback SDK |
 | `GET` | `/api/playlists` | Return a normalized page of owned/collaborative playlists eligible for content browsing |
 | `GET` | `/api/playlists/<playlist_id>/tracks` | Return normalized items from one eligible owned/collaborative playlist |
+| `PUT` | `/api/playback/start` | Validate the SDK device and selected Spotify URIs, then start playback |
 
-Spotify scopes should be finalized against the current endpoint documentation immediately before coding. Start with the minimum needed for streaming, private playlist reading, and any Web API playback command actually used.
+The implementation requests `streaming`, `playlist-read-private`, `playlist-read-collaborative`, `user-read-email`, `user-read-private`, and `user-modify-playback-state`. Spotify's Web Playback SDK setup currently requires the email and private-profile scopes even though the application does not display or persist the user's email address. Recheck these scopes against current endpoint documentation before real-account verification or release.
 
 ## 11. Conceptual state model
 
@@ -246,8 +299,9 @@ The application does not own Spotify music data. It temporarily represents:
 - **Playlist:** Spotify ID, name, ownership/collaboration eligibility, image/link metadata
 - **Track:** Spotify URI/ID, availability, title, artist, album, duration, artwork/link metadata
 - **Player:** device readiness, current track, paused state, position, duration, error
+- **Preferences:** compact/expanded mode, theme preset, accent choice
 
-Spotify remains the source of truth. Do not build a local catalog or cache of Spotify content.
+Spotify remains the source of truth for music data. Local browser storage may contain only application-owned appearance preferences, not Spotify content or credentials.
 
 ## 12. Security and policy requirements
 
@@ -264,7 +318,7 @@ Spotify remains the source of truth. Do not build a local catalog or cache of Sp
 
 ## 13. Implementation slices
 
-Each slice should end with a runnable behavior and focused tests.
+Each slice ends with runnable behavior and focused tests. Slices 1-6 are implemented and covered by offline tests; the live-account and browser portions of Slice 7 remain manual.
 
 1. **Foundation**
    - Create the Flask application factory and configuration boundary.
@@ -281,16 +335,20 @@ Each slice should end with a runnable behavior and focused tests.
    - Handle pagination, unavailable data, authorization failures, and rate limits.
    - Test against recorded, sanitized response fixtures rather than live Spotify calls.
 
-4. **Accessible menu shell**
-   - Build the screen and explicit wheel buttons.
-   - Implement selection, back navigation, pointer input, and keyboard input using local fixture data.
+4. **Accessible player and browser shell**
+   - Build compact player, expanded player, and library browser views using local fixture data.
+   - Implement mode switching, selection, back navigation, pointer input, and keyboard input.
    - Test state transitions separately from styling.
 
-5. **Playback integration**
+5. **Bounded customization**
+   - Add the three theme presets, accent selection, local preference persistence, and reset behavior.
+   - Verify contrast, keyboard focus, and behavior parity for every preset.
+
+6. **Playback integration**
    - Register the browser player, activate it from a user action, select tracks, and subscribe to player state.
    - Add truthful progress and recovery states.
 
-6. **Compliance and polish**
+7. **Compliance and polish - partially complete**
    - Apply attribution, artwork, metadata, link, responsive, and accessibility requirements.
    - Test the complete flow in supported browsers and document known mobile limits.
 
@@ -298,7 +356,7 @@ Each slice should end with a runnable behavior and focused tests.
 
 - **Unit tests:** configuration validation, OAuth state, token refresh decisions, Spotify response normalization, navigation reducer/state machine, time formatting
 - **Route tests:** unauthenticated access, callback outcomes, logout, upstream Spotify errors
-- **UI tests:** keyboard parity, selection boundaries, back stack, loading/empty/error states
+- **UI tests:** keyboard parity, selection boundaries, back stack, mode switching, theme persistence/reset, loading/empty/error states
 - **Integration tests:** mocked Spotify API and SDK adapters; no required network access in the normal test suite
 - **Manual tests:** real Premium login, first playback activation, browser device readiness, skip behavior, content links, current desktop browsers
 
@@ -307,22 +365,24 @@ Each slice should end with a runnable behavior and focused tests.
 The MVP is complete only when:
 
 - One allowlisted Premium user with an owned or collaborative playlist can complete the primary flow from a clean session.
-- The five essential controls work with mouse and keyboard.
+- Playback, library, mode-switching, and customization controls work with mouse and keyboard.
 - Displayed metadata and progress match actual player state.
+- Compact and expanded modes preserve player state.
+- All three theme presets pass the agreed readability, contrast, and focus review.
 - Authentication denial, empty playlists, unavailable tracks, autoplay blocking, offline player, and rate-limit errors have visible recovery paths.
 - Secrets are absent from Git history and logs.
 - Automated tests cover the application-owned state and failure handling.
 - The README contains reproducible local setup and test commands.
 - Spotify attribution, links, metadata, artwork, and non-commercial restrictions have been reviewed against the then-current official rules.
 
-## 16. Decisions to confirm before the first code slice
+## 16. Remaining decisions and verification
 
-1. Confirm that a Spotify Premium account and an available Spotify developer Client ID are available.
-2. Confirm the working product name for the UI; do not default to the repository name for a public brand.
-3. Draw and review low-fidelity Welcome, Playlist, Track, Now Playing, and error-state wireframes.
-4. Recheck the exact Spotify scopes and development-mode endpoint availability.
-
-The first coding slice should not begin until these decisions are settled.
+1. Complete real OAuth and playback verification with a Spotify Premium account and developer Client ID.
+2. Confirm the public product name; "Spotify Pocket Player" remains provisional.
+3. Revise Diagram 01 to add the `Customize player` use case.
+4. Complete Diagram 02 with compact/expanded and customization branches.
+5. Draw and review the revised low-fidelity wireframes listed in the UX artifact sequence.
+6. Recheck the exact Spotify scopes, policy, and development-mode endpoint availability before release.
 
 ## 17. Current official references
 
@@ -333,4 +393,4 @@ The first coding slice should not begin until these decisions are settled.
 - [Spotify Design and Branding Guidelines](https://developer.spotify.com/documentation/design)
 - [Spotify Developer Policy](https://developer.spotify.com/policy)
 
-These links describe current constraints, not permanent guarantees. Review them again before implementation and before any public release.
+These links describe current constraints, not permanent guarantees. Review them again before live-account verification and before any public release.
