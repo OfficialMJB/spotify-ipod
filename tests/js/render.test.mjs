@@ -57,12 +57,24 @@ test("player updates preserve the focused library item while library updates sti
   const list = documentObject.querySelector("#library-list");
   const firstButton = list.children[0].children[0];
   firstButton.focus();
-  state = updateSection(state, "player", { status: "ready", deviceId: "device" });
+  state = updateSection(state, "player", {
+    status: "ready",
+    deviceId: "device",
+    paused: true,
+    track: { title: "Now playing song", artists: "New artist", album: "New album" },
+    position: 30_000,
+    duration: 180_000,
+  });
   render(state);
 
   assert.equal(documentObject.activeElement, firstButton);
   assert.equal(list.children[0].children[0], firstButton);
   assert.equal(firstButton.isConnected, true);
+  assert.equal(documentObject.querySelector("#track-title").textContent, "Now playing song");
+  assert.equal(documentObject.querySelector("#track-artist").textContent, "New artist");
+  assert.equal(documentObject.querySelector("#position-time").textContent, "0:30");
+  assert.equal(documentObject.querySelector("#duration-time").textContent, "3:00");
+  assert.equal(documentObject.querySelector('[data-action="toggle-playback"]').disabled, false);
 
   state = updateSection(state, "library", {
     likedTracks: [...state.library.likedTracks, { id: "two", title: "Second song", artists: "Artist" }],
