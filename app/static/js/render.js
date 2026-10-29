@@ -39,6 +39,7 @@ export function createRenderer(documentObject = document) {
   };
 
   let currentState = null;
+  let renderedLibrary = null;
   let progressFrame = null;
   const requestFrame = documentObject.defaultView?.requestAnimationFrame?.bind(documentObject.defaultView);
 
@@ -49,7 +50,10 @@ export function createRenderer(documentObject = document) {
     renderNotice(elements, state);
     renderPlayer(elements, state);
     renderPanels(elements, state);
-    renderLibrary(elements, state, documentObject);
+    if (state.library !== renderedLibrary) {
+      renderLibrary(elements, state, documentObject);
+      renderedLibrary = state.library;
+    }
     renderPreferences(elements, state);
     if (requestFrame && progressFrame === null && shouldAnimateProgress(state.player)) {
       progressFrame = requestFrame(updateProgress);
